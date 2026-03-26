@@ -1,91 +1,111 @@
--- Draggable Key Button Lib (Loadingstring Ready)
--- Cole tudo isso de uma vez no seu executor
+-- =============================================
+-- BOTÃO RIGHT SHIFT - Arrastável (PC + Mobile)
+-- Coloque isso como LocalScript no executor
+-- =============================================
 
-local DraggableKeyButtonLib = {}
-
+local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")  -- Usado em muitos executores
 
-local function makeDraggable(gui)
-	local dragging, dragInput, dragStart, startPos
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-	gui.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = gui.Position
+-- Cria a ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RightShiftButton"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end)
+-- Cria o botão
+local button = Instance.new("TextButton")
+button.Name = "ShiftBtn"
+button.Size = UDim2.new(0, 90, 0, 90)
+button.Position = UDim2.new(0, 50, 0, 50)
+button.BackgroundColor3 = Color3.fromRGB(220, 20, 20)
+button.Text = "RIGHT\nSHIFT"
+button.TextColor3 = Color3.new(1, 1, 1)
+button.TextScaled = true
+button.Font = Enum.Font.GothamBold
+button.BorderSizePixel = 0
+button.BackgroundTransparency = 0
+button.Parent = screenGui
 
-	gui.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-			dragInput = input
-		end
-	end)
+-- Cantos arredondados
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 20)
+corner.Parent = button
 
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and input == dragInput then
-			local delta = input.Position - dragStart
-			gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
+-- Sombra suave
+local uiGradient = Instance.new("UIGradient")
+uiGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 60)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0))
+}
+uiGradient.Rotation = 45
+uiGradient.Parent = button
+
+-- Variáveis para drag
+local dragging = false
+local dragInput = nil
+local dragStart = nil
+local startPos = nil
+
+-- Função que simula pressionar Right Shift (melhor método em executores)
+local function pressRightShift()
+    -- Feedback visual
+    button.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    button.Size = UDim2.new(0, 82, 0, 82)
+    
+    -- Simula a tecla Right Shift
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.RightShift, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.RightShift, false, game)
+    end)
+    
+    -- Volta ao normal
+    task.wait(0.1)
+    button.BackgroundColor3 = Color3.fromRGB(220, 20, 20)
+    button.Size = UDim2.new(0, 90, 0, 90)
 end
 
-function DraggableKeyButtonLib:Create(config)
-	config = config or {}
+-- ====================== DRAG (Mouse + Touch) ======================
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
 
-	-- Evita criar várias ScreenGuis
-	local screenGui = game:GetService("CoreGui"):FindFirstChild("DraggableKeyLib") 
-		or Instance.new("ScreenGui")
-	screenGui.Name = "DraggableKeyLib"
-	screenGui.ResetOnSpawn = false
-	screenGui.Parent = game:GetService("CoreGui")
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
 
-	local btn = Instance.new("ImageButton")
-	btn.Name = config.Name or "KeyButton"
-	btn.BackgroundTransparency = 1
-	btn.Size = config.Size or UDim2.new(0, 100, 0, 100)
-	btn.Position = config.Position or UDim2.new(0.5, -50, 0.5, -50)
-	btn.Image = config.Image or "rbxassetid://357249130"
-	btn.Parent = screenGui
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
-	-- Suavidade das bordas (20 é bem suave e bonito)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = config.CornerRadius or UDim.new(0, 20)
-	corner.Parent = btn
+-- Clique no botão (executa o Right Shift)
+button.MouseButton1Click:Connect(function()
+    pressRightShift()
+end)
 
-	makeDraggable(btn)
+-- Suporte extra para touch (alguns executores mobile)
+button.TouchTap:Connect(function()
+    pressRightShift()
+end)
 
-	-- Clique → simula tecla
-	btn.MouseButton1Click:Connect(function()
-		local key = config.KeyCode or Enum.KeyCode.E
-
-		VirtualInputManager:SendKeyEvent(true, key, false, game)
-		task.wait(0.07)
-		VirtualInputManager:SendKeyEvent(false, key, false, game)
-	end)
-
-	print("✅ Botão criado com sucesso! Tecla: " .. tostring(config.KeyCode))
-	return btn
-end
-
--- =======================
--- EXEMPLO DE USO (depois da lib)
--- =======================
-
---[[
-DraggableKeyButtonLib:Create({
-	Image = "rbxassetid://SEU_ID_AQUI",      -- ← coloque seu rbxassetid aqui
-	KeyCode = Enum.KeyCode.F,                -- tecla que vai apertar (mude aqui)
-	CornerRadius = UDim.new(0, 25),          -- quanto mais alto = mais redondo
-	Size = UDim2.new(0, 85, 0, 85),
-	Position = UDim2.new(0, 350, 0, 250),
-	Name = "BotaoF"
-})
-]]
+print("✅ Botão Right Shift criado com sucesso! Arraste e clique para usar.")
