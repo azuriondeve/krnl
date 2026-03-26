@@ -7,6 +7,11 @@ local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/azu
 ')))()
 ```
 
+## Booting the library of mobile button
+```
+loadstring(game:HttpGet("https://raw.githubusercontent.com/azuriondeve/krnl/refs/heads/main/library/uibut.lua"))()
+```
+
 
 
 ## Creating a Window
@@ -37,6 +42,17 @@ CloseCallback = <function> - Function to execute when the window is closed.
 ]]
 ```
 
+## Creatinhg mobile button
+```
+DraggableKeyButtonLib:Create({
+	Image = "rbxassetid://SEU_ID_AQUI",      -- ← coloque seu rbxassetid aqui
+	KeyCode = Enum.KeyCode.RightShift,                -- tecla que vai apertar (mude aqui)
+	CornerRadius = UDim.new(0, 25),          -- quanto mais alto = mais redondo
+	Size = UDim2.new(0, 85, 0, 85),
+	Position = UDim2.new(0, 350, 0, 250),
+	Name = "BotaoF"
+})
+```
 
 
 ## Creating a Tab
