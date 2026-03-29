@@ -1,10 +1,41 @@
-
-
 --[[
     Azurion Hub - Elite Loader (Universal Support)
-    Professional Interface with Modern Design, Draggable UI & Game List Support
-    Updated: Added GameId (UniverseId) support for universal IDs like 994732206
+    Versão com Suporte a Configurações Globais (getgenv/_G)
 ]]
+
+-- 1. Definição das Configurações Globais (Serão aplicadas antes de qualquer script)
+local function applyGlobalConfigs()
+    -- Você pode usar _G ou getgenv() conforme sua preferência
+    getgenv().AzurionConfig = {
+        AutoFarm = false,
+        FarmDistance = 20,
+        AutoCastleRaid = false,
+        AttackNearest = false,
+        AutoFarmRaid = false,
+        TweenSpeed = 200,
+        SelectedWeapon = "Melee",
+        HitboxExpander = false,
+        HitboxSize = 60,
+        ViewHitbox = false,
+        WaterWalking = true,
+        SpeedValue = 1,
+        AutoBuso = true,
+        IsMoving = false,
+        AutoStatus = false,
+        SelectedStats = { "Melee" },
+        Amount = 1,
+        SelectedPlayer = nil,
+        TweenToPlayer = false,
+        DistanceLimit = 70,
+        AutoPressU = false
+    }
+    
+    -- Exemplo de compatibilidade com seu _G atual
+    _G.Config = getgenv().AzurionConfig 
+end
+
+-- Chamar a função de configuração imediatamente
+applyGlobalConfigs()
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -44,11 +75,10 @@ local Config = {
     Version = "v1"
 }
 
--- Script Database (Suporta PlaceId ou GameId/UniverseId)
+-- Script Database
 local scripts = {
     [18667984660] = "https://raw.githubusercontent.com/azuriondeve/krnl/refs/heads/main/games/flexyourfps.lua",
-    [994732206] = "https://raw.githubusercontent.com/azuriondeve/krnl/refs/heads/main/games/bf.lua", -- Exemplo de GameId
-
+    [994732206] = "https://raw.githubusercontent.com/azuriondeve/krnl/refs/heads/main/games/bf.lua", 
 }
 
 -- Theme
@@ -155,120 +185,8 @@ ProgressFill.BackgroundColor3 = Theme.Accent
 ProgressFill.Parent = ProgressBG
 Instance.new("UICorner", ProgressFill).CornerRadius = UDim.new(1, 0)
 
--- List of Supported Games
+-- List Frame
 local ListFrame = Instance.new("ScrollingFrame")
 ListFrame.Name = "ListFrame"
 ListFrame.Size = UDim2.new(1, 0, 0, 140)
-ListFrame.Position = UDim2.new(0, 0, 1, 10)
-ListFrame.BackgroundTransparency = 1
-ListFrame.ScrollBarThickness = 2
-ListFrame.ScrollBarImageColor3 = Theme.Accent
-ListFrame.Visible = false
-ListFrame.Parent = Content
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 5)
-UIListLayout.Parent = ListFrame
-
-local function closeUI()
-    TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 340, 0, 0), Position = UDim2.new(0.5, -170, 0.5, 0)}):Play()
-    task.wait(0.5)
-    ScreenGui:Destroy()
-end
-
-local function executeScript(url)
-    StatusLabel.Text = Text.LoadingManual
-    StatusLabel.TextColor3 = Theme.Success
-    task.wait(0.5)
-    closeUI()
-    loadstring(game:HttpGet(url))()
-end
-
-local function createGameEntry(id, url)
-    local success, info = pcall(function() return MarketplaceService:GetProductInfo(id) end)
-    local name = success and info.Name or "Game ID: "..id
-    
-    local Entry = Instance.new("TextButton")
-    Entry.Size = UDim2.new(1, -5, 0, 35)
-    Entry.BackgroundColor3 = Theme.Secondary
-    Entry.Text = "  " .. name
-    Entry.TextColor3 = Theme.SubText
-    Entry.TextXAlignment = Enum.TextXAlignment.Left
-    Entry.Font = Enum.Font.Gotham
-    Entry.TextSize = 12
-    Entry.AutoButtonColor = true
-    Entry.Parent = ListFrame
-    Instance.new("UICorner", Entry).CornerRadius = UDim.new(0, 6)
-
-    local RunIcon = Instance.new("TextLabel")
-    RunIcon.Size = UDim2.new(0, 60, 1, 0)
-    RunIcon.Position = UDim2.new(1, -65, 0, 0)
-    RunIcon.BackgroundTransparency = 1
-    RunIcon.Text = "RODAR >"
-    RunIcon.TextColor3 = Theme.Accent
-    RunIcon.Font = Enum.Font.GothamBold
-    RunIcon.TextSize = 10
-    RunIcon.Parent = Entry
-
-    Entry.MouseButton1Click:Connect(function()
-        executeScript(url)
-    end)
-end
-
--- Functions
-local function animateProgress(target, speed)
-    TweenService:Create(ProgressFill, TweenInfo.new(speed or 1, Enum.EasingStyle.Quart), {Size = UDim2.new(target, 0, 1, 0)}):Play()
-end
-
--- Main Logic
-task.spawn(function()
-    animateProgress(0.4, 1.5)
-    StatusLabel.Text = Text.Verifying
-    task.wait(1.2)
-    
-    local placeId = game.PlaceId
-    local gameId = game.GameId -- Universal ID
-    
-    -- Checa se o PlaceId ou o GameId está no banco de dados
-    local targetScript = scripts[placeId] or scripts[gameId]
-
-    if targetScript then
-        StatusLabel.Text = Text.Supported
-        StatusLabel.TextColor3 = Theme.Success
-        animateProgress(1, 0.8)
-        task.wait(1)
-        executeScript(targetScript)
-    else
-        -- Expand UI for Manual Selection
-        StatusLabel.Text = Text.NotSupported .. placeId .. ")"
-        StatusLabel.TextColor3 = Theme.Error
-        task.wait(0.5)
-        
-        TweenService:Create(MainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 340, 0, 350)}):Play()
-        TweenService:Create(Content, TweenInfo.new(0.6), {Size = UDim2.new(1, -40, 0, 280)}):Play()
-        
-        task.wait(0.3)
-        ProgressBG.Visible = false
-        StatusLabel.Text = Text.SupportedGames
-        StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-        
-        ListFrame.Visible = true
-        TweenService:Create(ListFrame, TweenInfo.new(0.5), {Position = UDim2.new(0, 0, 0, 40)}):Play()
-        
-        for id, url in pairs(scripts) do
-            task.spawn(function() createGameEntry(id, url) end)
-        end
-        
-        local CloseBtn = Instance.new("TextButton")
-        CloseBtn.Size = UDim2.new(1, 0, 0, 35)
-        CloseBtn.Position = UDim2.new(0, 0, 0.85, 0)
-        CloseBtn.BackgroundColor3 = Theme.Tertiary
-        CloseBtn.Text = Text.Close
-        CloseBtn.TextColor3 = Theme.Text
-        CloseBtn.Font = Enum.Font.GothamBold
-        CloseBtn.Parent = Content
-        Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
-        
-        CloseBtn.MouseButton1Click:Connect(closeUI)
-    end
-end)
+ListFrame.Position = UDim2.new(0, 0,
